@@ -1,0 +1,147 @@
+Unit Converter Presentation
+========================================================
+author: Laura Garner
+date:   19 May 2019
+autosize: true
+<style>
+body {
+    overflow: scroll;
+}
+</style>
+
+Overview
+========================================================
+
+The unit converter app was built using Shiny. This app takes user input for numeric figure for a weight plus the unit of weight to be converted. 
+
+The output is a table which provides the converted figures for 5 different units of weight - milligrams, grams, kilograms, pounds and ounces.
+
+This app is designed to be quite simple and intuitive but still serve a usable purpose.I have personally used this app to convert measures when baking, particularly when the recipe is written in ounces and the standard measure in Australia is grams.
+
+Example
+========================================================
+
+For example, if the user enters 4 ounces into the sidebar panel, the table returns the following:
+
+```{r echo = FALSE}
+data.frame(
+                        Measure = c("Milligrams (mg)",
+                                 "Grams (g)",
+                                 "Kilograms (kg)",
+                                 "Pounds (lb)",
+                                 "Ounces (oz)"),
+                        Value = as.character(c(4 * 28349.5231,
+                                             4 * 28.3495231,
+                                             4 * 0.0283495231,
+                                             4 / 16,
+                                             4 )),
+                        stringsAsFactors = FALSE)
+
+```
+
+The code
+========================================================
+The code used for this shiny app can also be found in the github repository.
+
+UI component
+
+```{r, eval=FALSE}
+library(shiny)
+
+
+shinyUI(fluidPage(
+  
+  # Application title
+  titlePanel("Unit converter for weight "),
+  
+  # Sidebar with a selection list for measure of weight being converted and a numeric input for the user to provide the value
+  sidebarLayout(
+    sidebarPanel(
+            h5("Instructions: Enter a value into the weight field and then choose the measure that you are weighing in.
+               The table in the main panel will show that measure of weight converted into various other units."),
+            numericInput("Weight", "Enter weight here", value = 1),
+            selectInput("Measure",
+                   "Unit of weight to be converted",
+                   choices = c("Milligrams (mg)", "Grams (g)", "Kilograms (kg)", "Pounds (lb)", "Ounces (oz)"))
+    
+       
+       ),
+    
+    # Return a table with the provided weight converted into various units
+    mainPanel(
+            tableOutput("values")
+
+    )
+  )
+))
+
+```
+
+The code (cont'd)
+========================================================
+Server component
+```{r, eval=FALSE}
+shinyServer(function(input, output) {
+        tableValues <- reactive({
+                
+                data.frame(
+                        Measure = c("Milligrams (mg)",
+                                 "Grams (g)",
+                                 "Kilograms (kg)",
+                                 "Pounds (lb)",
+                                 "Ounces (oz)"),
+                        Value = as.numeric(c(mg_fun(input$Measure),
+                                                g_fun(input$Measure),
+                                                kg_fun(input$Measure),
+                                                lb_fun(input$Measure),
+                                                oz_fun(input$Measure))),
+                        stringsAsFactors = FALSE)
+        })
+        
+        # Show the values in an HTML table ----
+        output$values <- renderTable({
+                tableValues() 
+        }, width = 400, digits = 6)
+        
+        mg_fun <- function(val) {
+                if(val == "Milligrams (mg)"){input$Weight}
+                        else if(val == "Grams (g)"){input$Weight * 1000 }
+                        else if(input$Measure == "Kilograms (kg)"){input$Weight * 1000000}
+                        else if (input$Measure == "Ounces (oz)"){input$Weight * 28349.5231}
+                        else if (input$Measure == "Pounds (lb)"){input$Weight * 453592.37}
+        }
+        
+        g_fun <- function(val) {
+                if(val == "Milligrams (mg)"){input$Weight / 1000}
+                        else if(val == "Grams (g)"){input$Weight}
+                        else if(input$Measure == "Kilograms (kg)"){input$Weight * 1000}
+                        else if (input$Measure == "Ounces (oz)"){input$Weight * 28.3495231}
+                        else if (input$Measure == "Pounds (lb)"){input$Weight * 453.59237}
+        }
+        
+        kg_fun <- function(val) {
+                if(val == "Milligrams (mg)"){input$Weight / 1000000}
+                        else if(val == "Grams (g)"){input$Weight/1000}
+                        else if(input$Measure == "Kilograms (kg)"){input$Weight}
+                        else if (input$Measure == "Ounces (oz)"){input$Weight * .0283495231}
+                        else if (input$Measure == "Pounds (lb)"){input$Weight * .45359237}
+        }
+        
+        lb_fun <- function(val) {
+                if(val == "Milligrams (mg)"){input$Weight / 453592.37}
+                        else if(val == "Grams (g)"){input$Weight/453.59237}
+                        else if(input$Measure == "Kilograms (kg)"){input$Weight/.45359237}
+                        else if (input$Measure == "Ounces (oz)"){input$Weight / 16}
+                        else if (input$Measure == "Pounds (lb)"){input$Weight}
+        }
+        
+        oz_fun <- function(val) {
+                if(val == "Milligrams (mg)"){input$Weight / 28349.5231}
+                        else if(val == "Grams (g)"){input$Weight/1000}
+                        else if(input$Measure == "Kilograms (kg)"){input$Weight/.0283495231}
+                        else if (input$Measure == "Ounces (oz)"){input$Weight}
+                        else if (input$Measure == "Pounds (lb)"){input$Weight *16}
+        }
+})
+
+```
